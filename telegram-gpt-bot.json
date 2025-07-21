@@ -1,0 +1,257 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a helpful assistant that helps users clarify their messages if they are unclear, misspelled, or seem jumbled.\n\nThe user wrote: \"{{ $json.original_msg.body.msg }}\"\n\nYour task:\n1. Analyze if the message contains a typo, is jumbled, or lacks context.\n2. If it’s clear, respond naturally to it.\n3. If it’s confusing or has mistakes, suggest possible intended words or phrases.\n4. Ask for clarification politely and helpfully.\n5-{{ $json.original_msg.body.msg }}\n\nرد على الرسالة أعلاه بنفس لغتها الأصلية. إذا كانت بالعربية، اجعل الرد بالعربية. إذا كانت بالإنجليزية، اجعل الرد بالإنجليزية.\n\n\nExample format:\n\nHmm, I noticed your message: \"hifghg\" might be unclear or misspelled.\n\nDid you mean one of these?\n• high  \n• highlight  \n• flight  \n\nCould you please clarify what you meant so I can assist you better?\n\n---\n\nAlways be polite, concise, and act like a helpful language assistant. If the message is already clear, just respond normally and continue the conversation.\n",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        208,
+        -96
+      ],
+      "id": "101bdc93-d6f7-4ad9-9dbb-68f55deafbb5",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        272,
+        128
+      ],
+      "id": "99990d59-ff10-45e8-891d-9d652e95972c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "u2aFOv2pCNKFh99X",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1d5a9a8-b436-439d-ba9c-fedb708c043a",
+              "name": "body.msg",
+              "value": "={{ $json.body.msg }}",
+              "type": "string"
+            },
+            {
+              "id": "b8b166bf-9375-4d28-ab15-420f0091150c",
+              "name": "body.chat_id",
+              "value": "={{ $json.body.chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -256,
+        -96
+      ],
+      "id": "72f1293c-d258-40d8-b4c1-d6b5a89eafb5",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      original_msg: items[0].json,\n      parsed_chat_id: Number(items[0].json.chat_id)\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -96
+      ],
+      "id": "322150a1-e42a-4cd8-9b29-9294d9f5f655",
+      "name": "Code",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        592,
+        -256
+      ],
+      "id": "db8d7aa6-d7b4-4378-8e3b-fe9b376f0478",
+      "name": "Merge",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8104730668:AAGmy4geEtQp0VctslIcSpZt0Zjry2r3zKo/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "chat_id",
+              "value": "={{$json[\"chat_id\"]}}"
+            },
+            {
+              "name": "text",
+              "value": "={{$json[\"text\"]}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1152,
+        -176
+      ],
+      "id": "11998bcd-902b-476e-bbd9-00248fbd4eca",
+      "name": "HTTP Request",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $json[\"text\"].replace(/\"/g, '\\\\\"');\nconst chatId = $json?.original_msg?.body?.chat_id;\n\nreturn [{\n  json: {\n    chat_id: chatId,\n    text: text\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        -256
+      ],
+      "id": "3b35cfb9-e0d0-4622-a648-84c2a2382547",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "d05cd854-e9f8-4797-a248-e2aa9288a99b",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        -96
+      ],
+      "id": "9ff09ba6-ebb7-421d-88e1-fa82a6a0b171",
+      "name": "Webhook",
+      "webhookId": "d05cd854-e9f8-4797-a248-e2aa9288a99b"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "50adbf21-b5f9-4e28-a658-16cf0ec61e36",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "408c400f93d6045f300c18e43817b36663a34781d8056aa17a8ebbbc77516857"
+  },
+  "id": "Al3aV6A99DRy19y3",
+  "tags": []
+}
