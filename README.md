@@ -58,7 +58,7 @@ Notes
 
 Example Screenshots
 
-(Add workflow screenshots or sample Telegram replies here if available)
+![Workflow Screenshot](images/workflow.png)
 
 ---
 
